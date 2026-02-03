@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowUpDown, MoreHorizontal, Search } from 'lucide-react';
 import { TableData, SortConfig, ColumnWidths } from '../types';
 
 interface TableGridProps {
@@ -14,16 +14,16 @@ const TableGrid: React.FC<TableGridProps> = ({ table, filterText }) => {
   
   const resizerRef = useRef<{ col: string; startX: number; startWidth: number } | null>(null);
 
-  // Initialize column widths
+  // Initialize column widths efficiently
   useEffect(() => {
     const initialWidths: ColumnWidths = {};
     table.columns.forEach(col => {
-      initialWidths[col] = 150; // Default width
+      initialWidths[col] = 180; // Standard production-grade column width
     });
     setColumnWidths(initialWidths);
+    setSortConfig({ column: null, direction: null }); // Reset sort on table change
   }, [table.id, table.columns]);
 
-  // Handle Sort
   const handleSort = (column: string) => {
     setSortConfig(prev => {
       if (prev.column === column) {
@@ -34,11 +34,9 @@ const TableGrid: React.FC<TableGridProps> = ({ table, filterText }) => {
     });
   };
 
-  // Process Rows (Filter & Sort)
   const processedRows = useMemo(() => {
     let rows = [...table.rows];
 
-    // Filter
     if (filterText) {
       const lowerFilter = filterText.toLowerCase();
       rows = rows.filter(row => 
@@ -48,11 +46,13 @@ const TableGrid: React.FC<TableGridProps> = ({ table, filterText }) => {
       );
     }
 
-    // Sort
     if (sortConfig.column && sortConfig.direction) {
       rows.sort((a, b) => {
         const valA = a[sortConfig.column!];
         const valB = b[sortConfig.column!];
+        
+        if (valA === null || valA === undefined) return 1;
+        if (valB === null || valB === undefined) return -1;
         
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -63,12 +63,11 @@ const TableGrid: React.FC<TableGridProps> = ({ table, filterText }) => {
     return rows;
   }, [table.rows, filterText, sortConfig]);
 
-  // Resizing logic
   const handleMouseDown = useCallback((e: React.MouseEvent, col: string) => {
     resizerRef.current = {
       col,
       startX: e.clientX,
-      startWidth: columnWidths[col] || 150
+      startWidth: columnWidths[col] || 180
     };
     
     document.body.classList.add('resizing');
@@ -76,7 +75,7 @@ const TableGrid: React.FC<TableGridProps> = ({ table, filterText }) => {
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (resizerRef.current) {
         const delta = moveEvent.clientX - resizerRef.current.startX;
-        const newWidth = Math.max(80, resizerRef.current.startWidth + delta);
+        const newWidth = Math.max(100, resizerRef.current.startWidth + delta);
         setColumnWidths(prev => ({ ...prev, [resizerRef.current!.col]: newWidth }));
       }
     };
@@ -93,50 +92,50 @@ const TableGrid: React.FC<TableGridProps> = ({ table, filterText }) => {
   }, [columnWidths]);
 
   return (
-    <div className="w-full h-full overflow-auto bg-slate-50 dark:bg-slate-900/20">
-      <table className="border-collapse table-fixed min-w-full">
-        <thead className="sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-sm">
+    <div className="w-full h-full overflow-auto bg-white dark:bg-slate-950">
+      <table className="border-separate border-spacing-0 table-fixed min-w-full">
+        <thead className="sticky top-0 z-10">
           <tr>
             {table.columns.map(col => (
               <th 
                 key={col} 
-                className="group relative border-b border-r border-slate-200 dark:border-slate-800 p-0 text-left overflow-visible"
-                style={{ width: columnWidths[col] || 150 }}
+                className="group relative border-b border-r border-slate-200 dark:border-slate-800 p-0 text-left bg-slate-50 dark:bg-slate-900/80 backdrop-blur-sm"
+                style={{ width: columnWidths[col] || 180 }}
               >
                 <div 
-                  className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="flex items-center justify-between px-3 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   onClick={() => handleSort(col)}
                 >
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate tracking-tight">{col}</span>
-                  <div className="flex-shrink-0 ml-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate uppercase tracking-wider">{col}</span>
+                  <div className="flex-shrink-0 ml-2">
                     {sortConfig.column === col ? (
                       sortConfig.direction === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100" />
+                      <ArrowUpDown className="w-3 h-3 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                     )}
                   </div>
                 </div>
                 
-                {/* Resizer Handle */}
+                {/* Visual Resizer */}
                 <div 
-                  className="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize hover:bg-blue-400/50 transition-colors"
+                  className="absolute top-0 right-0 bottom-0 w-[4px] cursor-col-resize hover:bg-blue-500/50 active:bg-blue-600 transition-colors z-20"
                   onMouseDown={(e) => handleMouseDown(e, col)}
                 />
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
           {processedRows.length > 0 ? (
             processedRows.map((row, i) => (
               <tr 
                 key={i} 
-                className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors group"
+                className="hover:bg-blue-50/30 dark:hover:bg-blue-900/5 transition-colors group"
               >
                 {table.columns.map(col => (
                   <td 
                     key={col} 
-                    className="border-b border-r border-slate-200 dark:border-slate-800 px-3 py-2 text-xs text-slate-600 dark:text-slate-300 truncate"
+                    className="border-r border-slate-100 dark:border-slate-800/50 px-4 py-2.5 text-xs text-slate-600 dark:text-slate-300 truncate font-medium mono"
                     title={String(row[col])}
                   >
                     {String(row[col])}
@@ -148,9 +147,15 @@ const TableGrid: React.FC<TableGridProps> = ({ table, filterText }) => {
             <tr>
               <td 
                 colSpan={table.columns.length} 
-                className="py-20 text-center text-slate-400 dark:text-slate-600 italic text-sm"
+                className="py-24 text-center"
               >
-                No matching records found.
+                <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-slate-600">
+                   <div className="p-3 bg-slate-100 dark:bg-slate-800/50 rounded-full mb-2">
+                      <Search className="w-6 h-6" />
+                   </div>
+                   <p className="text-sm font-semibold italic">No records match your current search.</p>
+                   <p className="text-xs">Try clearing the search box or selecting a different table.</p>
+                </div>
               </td>
             </tr>
           )}

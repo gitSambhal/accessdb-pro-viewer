@@ -9,17 +9,11 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
-      plugins: [
-        react(),
-      ],
+      plugins: [react()],
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      },
-      build: {
-        outDir: 'dist',
-        sourcemap: false
       }
     };
 });

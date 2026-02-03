@@ -1,5 +1,6 @@
+
 {
-  "name": "AccessDB Pro Viewer",
-  "description": "A high-performance web-based MDB/ACCDB file viewer with support for multiple tabs, dark mode, column sorting, resizing, and AI-powered data analysis via Gemini.",
+  "name": "AccessDB Pro",
+  "description": "Professional web-based MDB and ACCDB database file viewer. High-performance, secure, and privacy-focused with full offline support.",
   "requestFramePermissions": []
 }
