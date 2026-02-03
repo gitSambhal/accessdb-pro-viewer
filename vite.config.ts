@@ -4,17 +4,14 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    const isProduction = mode === 'production';
-    
     return {
       server: {
         port: 3000,
         host: '0.0.0.0',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
       },
-      plugins: [react()],
+      plugins: [
+        react(),
+      ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
@@ -25,17 +22,8 @@ export default defineConfig(({ mode }) => {
         }
       },
       build: {
-        // Ensure proper MIME types for module scripts
         outDir: 'dist',
-        emptyOutDir: true,
-        rollupOptions: {
-          output: {
-            format: 'es',
-            entryFileNames: 'assets/[name].[hash].js',
-            chunkFileNames: 'assets/[name].[hash].js',
-            assetFileNames: 'assets/[name].[hash].[ext]',
-          },
-        },
-      },
+        sourcemap: false
+      }
     };
 });
