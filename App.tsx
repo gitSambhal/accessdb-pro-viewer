@@ -18,6 +18,7 @@ import DatabaseView from './components/DatabaseView';
 const App: React.FC = () => {
   const [files, setFiles] = useState<DatabaseFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark' || 
@@ -120,7 +121,27 @@ const App: React.FC = () => {
   const activeFile = files.find(f => f.id === activeFileId);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden dark:bg-slate-950 transition-colors">
+    <div 
+      className="flex flex-col h-screen overflow-hidden dark:bg-slate-950 transition-colors"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        setIsDragging(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const droppedFiles = e.dataTransfer.files;
+        Array.from(droppedFiles).forEach(file => {
+          if (file.name.endsWith('.mdb') || file.name.endsWith('.accdb')) {
+            processFile(file);
+          }
+        });
+      }}
+    >
       {/* Header */}
       <header className="h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-white dark:bg-slate-900 z-10">
         <div className="flex items-center gap-2">
@@ -147,7 +168,21 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950">
+      <main className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 relative">
+        {/* Drag Overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-blue-600/10 dark:bg-blue-500/20 border-2 border-dashed border-blue-500 dark:border-blue-400 z-50 flex items-center justify-center">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
+                <Database className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-semibold dark:text-white">Drop your database file</h3>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">Supports .mdb and .accdb files</p>
+              </div>
+            </div>
+          </div>
+        )}
         {files.length === 0 ? (
           <div 
             className="flex-1 flex flex-col items-center justify-center p-8 text-center"
