@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
       },
       plugins: [react()],
       define: {
@@ -22,29 +25,17 @@ export default defineConfig(({ mode }) => {
         }
       },
       build: {
-        // Production optimizations
-        minify: 'terser',
-        terserOptions: {
-          compress: {
-            drop_console: isProduction,
-            drop_debugger: isProduction,
-            pure_funcs: ['console.log', 'console.info', 'console.debug'],
-          },
-          format: {
-            comments: false,
-          },
-        },
+        // Ensure proper MIME types for module scripts
+        outDir: 'dist',
+        emptyOutDir: true,
         rollupOptions: {
           output: {
-            manualChunks: {
-              vendor: ['react', 'react-dom'],
-              lucide: ['lucide-react'],
-              genai: ['@google/genai'],
-            },
+            format: 'es',
+            entryFileNames: 'assets/[name].[hash].js',
+            chunkFileNames: 'assets/[name].[hash].js',
+            assetFileNames: 'assets/[name].[hash].[ext]',
           },
         },
-        cssCodeSplit: true,
-        chunkSizeWarningLimit: 1000,
       },
     };
 });
